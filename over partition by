@@ -1,0 +1,65 @@
+Oracle over partition by 
+
+假設一個公司的薪資資料如下.
+DEPT  NAME  SALARY
+-------------------------
+RD1	ANDY	120
+RD1	KEN	140
+RD1	KUO	180
+HR1		BEN	180
+RD2	YANG	130
+RD2	RAY		180
+
+1. 統計每個人佔部門總薪資的比例
+select dept,name,salary, salary/sum(salary)over(partition by dept) as ratio from salary
+HR1		BEN	180		1
+RD1	ANDY	120		0.27
+RD1	KEN	140		0.31
+RD1	KUO	180		0.40
+RD2	YANG	130		0.41
+RD2	RAY		180		0.58
+
+2. 統計每個人佔整公司的比例
+select dept,name,salary, salary/sum(salary)over(partition by null) as ratio from salary
+RD1	ANDY	120		0.12
+RD1	KEN	140		0.15
+RD1	KUO	180		0.19
+HR1		BEN	180		0.19
+RD2	YANG	130		0.13
+RD2	RAY		180		0.19
+
+3. 排序每個部門薪資由高至低
+select dept,name,salary, rank() over(partition by dept order by salary desc) as rank from salary
+HR1		BEN	180		1
+RD1	KUO	180		1
+RD1	KEN	140		2
+RD1	ANDY	120		3
+RD2	RAY		180		1
+RD2	YANG	130		2
+
+4. 排序整公司薪資由高至低 rank()
+select dept,name,salary, rank() over(partition by null order by salary desc) as rank from salary
+RD1	KUO	180		1
+HR1		BEN	180		1
+RD2	RAY		180		1
+RD1	KEN	140		4
+RD2	YANG	130		5
+RD1	ANDY	120		6
+
+4. 排序整公司薪資由高至低 dense_rank()
+select dept,name,salary, dense_rank() over(partition by null order by salary desc) as rank from salary
+RD1	KUO	180		1
+HR1		BEN	180		1
+RD2	RAY		180		1
+RD1	KEN	140		2
+RD2	YANG	130		3
+RD1	ANDY	120		4
+
+5. 最後要提一個觀念就是 partition by 的欄位值與 order by 是無關的.
+select dept,name,salary, rank() over(partition by dept order by salary desc) as rank from salary order by name
+RD1	ANDY	120		3
+HR1		BEN	180		1
+RD1	KEN	140		2
+RD1	KUO	180		1
+RD2	RAY		180		1
+RD2	YANG	130		2
